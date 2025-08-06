@@ -8,8 +8,14 @@ form > div {
     display: flex;
     flex-direction: column;
     align-items: center;
+    background-color: yellow;
+    color: crimson;
 
 }
 h2 { 
     text-align: center;
+    background-color: pink;
+    color: blue;
+    justify-content: center;
+    display: flex;
 }
