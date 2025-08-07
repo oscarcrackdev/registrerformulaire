@@ -1,72 +1,115 @@
 <?php
- // Tableau pour stocker les erreurs
+    require_once 'config/database.php';
+
     $errors = [];
-if ($_SERVER["REQUEST_METHOD"] === "POST") {
-    // Nettoyage des entrées
-    $username = trim(htmlspecialchars($_POST["username"] ?? ""));
-    $email = trim(htmlspecialchars($_POST["email"] ?? ""));
-    $password = $_POST["passeword"] ?? "";
-    $confirmPassword = $_POST["confirmPasseword"] ?? "";
+    // =========================================
+    // condition qui contient la logique de traitement du formulaire quand on recoit une request POST
+    // ==========================================
+    if ($_SERVER["REQUEST_METHOD"] === "POST"){
+        //recuperation des données du formulaire
+        //nettoyage des données du formulaire
+        $username = trim(htmlspecialchars($_POST["username"]) ?? '');
+        $email = trim(htmlspecialchars($_POST["email"]) ?? '');
+        $password = $_POST["password"] ?? '';
+        $confirmPassword = $_POST["confirmPassword"] ?? '';
 
-    // Validation du nom d'utilisateur
-    if (empty($username)) {
-        $errors[] = "Le nom d'utilisateur est requis.";
-    } elseif (strlen($username) < 3) {
-        $errors[] = "Le nom d'utilisateur doit contenir au moins 3 caractères.";
-    }
-
-    // Validation de l'email
-    if (empty($email)) {
-        $errors[] = "L'adresse e-mail est requise.";
-    } elseif (!filter_var($email, FILTER_VALIDATE_EMAIL)) {
-        $errors[] = "L'adresse e-mail est invalide.";
-    }
-
-    // Validation du mot de passe
-    if (empty($password)) {
-        $errors[] = "Le mot de passe est requis.";
-    } elseif (strlen($password) < 6) {
-        $errors[] = "Le mot de passe doit contenir au moins 6 caractères.";
-    }
-
-    // Vérification de la confirmation du passeword
-    if ($password !== $confirmPassword) {
-        $errors[] = "Les password ne correspondent pas.";
-    }
-    if (empty($errors)) {
-        echo " Données valides. Prêt à enregistrer dans la base de données.";
-     
-    } else {
-  
-        foreach ($errors as $error) {
-            echo " " . $error . "<br>";
+        //validation username
+        //valide que le champ soit remplis
+        if (empty($username)) {
+            $errors[] = "nom obligatoire !";
+        //valide avec la function strlen si la string est de plus de 3 carac
+        }elseif (strlen($username) < 3) {
+            $errors[] = "mini 3 carac";
+        //valide avec la function strlen si la string est de moins de 55 carac
+        }elseif (strlen($username) > 55) {
+            $errors[] = "max 55 carac";
         }
+        //validation email
+        if (empty($email)) {
+            $errors[] = "email obligatoire ! ( connard )";
+        }elseif (!filter_var($email, FILTER_VALIDATE_EMAIL)){
+            $errors[] = "votre adresse ne correspond au format mail classique";
+        }
+
+        //validation password
+        if (empty($password)) {
+            $errors[] = "password obligatoire";
+        }elseif ( strlen($password) < 3 ) {
+            $errors[] = "password trop juste";
+            // normalement ici on met un pattern pour le mdp
+        }elseif ( $password !== $confirmPassword ) {
+            $errors[] = "mot de passe doivent etre identique";
+        }
+        
+        if (empty($errors)) {
+            //logique de traitement en db
+            $pdo = dbConnexion();
+
+            //verifier si l'adresse mail est utilisé ou non
+            $checkEmail = $pdo->prepare("SELECT id FROM users WHERE email = ?");
+
+            //la methode execute de mon objet pdo execute la request préparée
+            $checkEmail->execute([$email]);
+
+            //une condition pour vérifier si je recupere quelque chose
+            if ($checkEmail->rowCount() > 0) {
+                $errors[] = "email déja utilisé";
+            } else {
+                //dans le cas ou tout va bien ! email pas utilisé
+
+                //hashage du mdp
+                $hashPassword = password_hash($password, PASSWORD_DEFAULT);
+
+                var_dump($hashPassword);
+
+            }
+            // try {
+                
+            // } catch () {
+                
+            // }
+        }
+
+        
     }
-}
 ?>
+
 <!DOCTYPE html>
-<html lang="fr">
+<html lang="en">
 <head>
-  <meta charset="UTF-8">
-  <title>Formulaire d'inscription</title>
-  <link rel="stylesheet" href="style.css">
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Document</title>
+    <link rel="stylesheet" href="assets/style/style.css">
 </head>
 <body>
-  <h2>Formulaire d'inscription</h2>
-  <form action="/submit" method="POST">
-    <label for="name">Nom :</label><br>
-    <input type="text" id="name" name="name" required><br><br>
-
-    <label for="email">Email :</label><br>
-    <input type="email" id="email" name="email" required><br><br>
-
-    <label for="password">Mot de passe :</label><br>
-    <input type="password" id="password" name="password" required><br><br>
-
-    <label for="confirm-password">Confirmer le mot de passe :</label><br>
-    <input type="password" id="confirm-password" name="confirm-password" required><br><br>
-
-    <input type="submit" value="S'inscrire">
-  </form>
+    <section>
+        <form action="" method="POST">
+            <?php
+                foreach ($errors as $error) {
+                    echo $error;
+                }
+            ?>
+            <div>
+                <label for="username">Pseudo</label>
+                <input type="text" id="username" name="username" placeholder="Entrez votre pseudo" required>
+            </div>
+            <div>
+                <label for="email">Email</label>
+                <input type="email" name="email" id="email" required placeholder="Entrez votre email">
+            </div>
+            <div>
+                <label for="password">password</label>
+                <input type="password" name="password" id="password" required placeholder="entrer votre mdp">
+            </div>
+            <div>
+                <label for="confirmPassword">confirmer password</label>
+                <input type="password" name="confirmPassword" id="confirmPassword" required placeholder="confirmer votre mdp">
+            </div>
+            <div>
+                <input type="submit" value="envoyer">
+            </div>
+        </form>
+    </section>
 </body>
 </html>
